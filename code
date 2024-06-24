@@ -1,0 +1,92 @@
+# Step 1: Data Collection
+# In this project, I'm using two open-source datasets and APIs:
+# OpenFootball: An open-source dataset of soccer matches from various leagues and tournaments.
+# Football-Data.co.uk API: A free API that provides soccer data, including match results, team statistics, and player data.
+# I'm fetching data from these sources using the requests library in Python.
+
+import requests
+
+# Fetch data from OpenFootball dataset
+openfootball_data = pd.read_csv('https://raw.githubusercontent.com/openfootball/data/master/data/england-premier-league/2019-2020.csv')
+
+# Fetch data from Football-Data.co.uk API
+api_url = 'https://api.football-data.co.uk/v2/competitions/PL/matches'
+response = requests.get(api_url)
+api_data = response.json()
+
+
+# Step 2: Data Preprocessing
+# Once I have the data, I need to preprocess it to make it suitable for modeling.
+# I'm performing the following preprocessing steps:
+# Handling categorical variables: I'm converting categorical variables like home_team and away_team into numerical variables using the astype method.
+# Merging datasets: I'm merging the OpenFootball dataset with the data fetched from the Football-Data.co.uk API using the merge method.
+
+
+import pandas as pd
+
+# Merge the datasets
+df = pd.merge(openfootball_data, api_data, on='match_id')
+
+# Preprocess the data
+df['home_team'] = df['home_team'].astype('category')
+df['away_team'] = df['away_team'].astype('category')
+df['match_outcome'] = df['match_outcome'].astype('category')
+
+
+# Step 3: Model Selection
+# In this project, I'm using a Random Forest Classifier to predict the match outcome.
+# I'm choosing a random forest classifier because it's a robust algorithm that can handle categorical variables and is less prone to overfitting.
+
+from sklearn.ensemble import RandomForestClassifier
+
+# Select a random forest classifier
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+
+
+# Step 4: Model Training
+# I'm splitting the preprocessed data into training and testing sets using the train_test_split method.
+# I'm training the random forest classifier on the training data using the fit method.
+
+from sklearn.model_selection import train_test_split
+
+# Split the data into training and testing sets
+X = df.drop(['match_outcome'], axis=1)
+y = df['match_outcome']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the random forest classifier
+rf.fit(X_train, y_train)
+
+
+# Step 5: Model Evaluation
+
+# I'm evaluating the performance of the model on the testing data using the following metrics:
+# Accuracy: The proportion of correctly classified instances.
+# Classification Report: A summary of the precision, recall, and F1 score for each class.
+# Confusion Matrix: A table that summarizes the predictions against the actual outcomes.
+# I'm using the accuracy_score, classification_report, and confusion_matrix functions from scikit-learn to calculate these metrics.
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Evaluate the model
+y_pred = rf.predict(X_test)
+print('Accuracy:', accuracy_score(y_test, y_pred))
+print('Classification Report:')
+print(classification_report(y_test, y_pred))
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred))
+
+
+# Step 6: Model Deployment
+# Deploy the trained model to make predictions on new, unseen data.
+
+# Use the model to make predictions
+new_match = pd.DataFrame({'home_team': ['Manchester City'], 
+                          'away_team': ['Liverpool'], 
+                          'home_team_possession': [55], 
+                          'away_team_possession': [45], 
+                          'home_team_shots': [15], 
+                          'away_team_shots': [10]})
+new_match = pd.get_dummies(new_match, columns=['home_team', 'away_team'])
+prediction = rf.predict(new_match)
+print('Predicted match outcome:', prediction[0])
